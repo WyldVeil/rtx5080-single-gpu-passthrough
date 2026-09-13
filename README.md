@@ -27,7 +27,7 @@ It solves two problems that the usual guides do not:
 ## Tested on
 
 - RTX 5080 (GB203, `10de:2c02`), single GPU, monitor on DisplayPort
-- Arch Linux, libvirt + QEMU, OVMF/UEFI guest (q35)
+- Host: Arch Linux, libvirt + QEMU, OVMF/UEFI guest (q35)
 - Guest: EndeavourOS live/installed, and Windows
 - The GPU is the primary/boot VGA (`boot_vga=1`)
 
