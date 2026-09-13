@@ -33,9 +33,6 @@ config-driven (you set your own PCI address), so in theory it should work on:
   single-GPU passthrough, or a black host screen after the VM shuts down that only a
   power drain clears, the two fixes here are worth trying whatever the generation.
 
-If it works (or does not) on your card, open an issue and say which one, so this list
-can grow.
-
 ## How it works
 
 A libvirt hook fires whenever a domain whose name ends in `-gpu` starts or stops:
