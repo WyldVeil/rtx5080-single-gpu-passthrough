@@ -59,7 +59,7 @@ Everything reads one config file, `/etc/vfio-passthrough.conf`.
   ```
 - **RTX 50 / Blackwell needs the open kernel modules** (`nvidia-open` / dkms-open),
   both on the host and in the guest. The proprietary module cannot init Blackwell.
-- An SSH lifeline is strongly recommended (single-GPU means the host goes headless
+- An SSH lifeline is recommended (single-GPU means the host goes headless
   while the VM runs). Enable `sshd` and allow it on your LAN.
 
 ## Setup
