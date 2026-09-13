@@ -155,20 +155,31 @@ what actually works.
 
 ## Recovery reference
 
-| Situation | Command (over SSH) |
+If the VM crashes, or the desktop does not come back after the VM shuts down, here
+are the ways to recover, gentlest first.
+
+| Situation | What to do |
 | --- | --- |
-| Host black after a normal guest shutdown | `sudo gpu-host-recover.sh` |
-| VM stuck / desktop did not return / panic | `sudo gpu-recover.sh` (also on the power button) |
-| GPU truly wedged (qemu in D-state, nothing responds) | hardware reset - it is safe, no vfio state persists to boot |
+| Host black after a normal guest shutdown | over SSH: `sudo gpu-host-recover.sh` |
+| VM crashed / stuck, or the desktop did not hand back | **one short press of the power button (do not hold)** - or over SSH: `sudo gpu-recover.sh` |
+| GPU truly wedged, nothing responds at all | full power cycle (see below) |
 
-On a truly wedged GPU a warm reboot is often not enough - an NVIDIA card can hold
-the bad state across it. Do a full power cycle instead: shut the machine down,
-switch the PSU off at the back (or pull the plug), hold the case power button for
-20 to 30 seconds to drain residual charge, then power the PSU back on and boot. This
-is safe here, because nothing the vfio scripts set up persists across a boot.
+**The power button is your no-SSH escape hatch.** While a `-gpu` VM is running (so the
+desktop is torn down), a single short press runs `gpu-recover.sh`, which force-stops
+the VM and hands the GPU back to the host. Press it once and wait a few seconds - do
+not hold it, because a long hold is set to force a hard poweroff. During normal
+desktop use the button behaves as usual (your desktop environment handles it).
 
-The power button runs `gpu-recover.sh` only while a `-gpu` VM is up; otherwise it
-behaves normally. Logs: `/var/log/vfio-gpu.log`, and `journalctl -t gpu-recover -t gpu-powerbtn`.
+Logs for both: `/var/log/vfio-gpu.log`, and `journalctl -t gpu-recover -t gpu-powerbtn`.
+
+### Full power cycle (last resort)
+
+Only if the GPU is truly wedged - `gpu-recover.sh` says so, or nothing responds at
+all. A warm reboot is often not enough, because an NVIDIA card can hold the bad state
+across it. Shut the machine down, switch the PSU off at the back (or pull the plug),
+hold the case power button for 20 to 30 seconds to drain residual charge, then power
+the PSU back on and boot. This is safe here, because nothing the vfio scripts set up
+persists across a boot.
 
 ## Repo layout
 
