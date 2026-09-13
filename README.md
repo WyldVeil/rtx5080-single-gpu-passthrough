@@ -161,6 +161,12 @@ what actually works.
 | VM stuck / desktop did not return / panic | `sudo gpu-recover.sh` (also on the power button) |
 | GPU truly wedged (qemu in D-state, nothing responds) | hardware reset - it is safe, no vfio state persists to boot |
 
+On a truly wedged GPU a warm reboot is often not enough - an NVIDIA card can hold
+the bad state across it. Do a full power cycle instead: shut the machine down,
+switch the PSU off at the back (or pull the plug), hold the case power button for
+20 to 30 seconds to drain residual charge, then power the PSU back on and boot. This
+is safe here, because nothing the vfio scripts set up persists across a boot.
+
 The power button runs `gpu-recover.sh` only while a `-gpu` VM is up; otherwise it
 behaves normally. Logs: `/var/log/vfio-gpu.log`, and `journalctl -t gpu-recover -t gpu-powerbtn`.
 
