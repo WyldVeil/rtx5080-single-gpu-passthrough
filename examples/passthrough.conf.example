@@ -1,0 +1,28 @@
+# /etc/vfio-passthrough.conf
+# Settings for the single-GPU passthrough scripts. Edit these for YOUR system.
+# Find PCI addresses with:  lspci -Dnn | grep -Ei 'vga|3d|audio|usb'
+# (the leading 0000: is the PCI domain and is almost always 0000)
+
+# The GPU (VGA/3D) function and its HDMI/DP audio function. Same card: .0 and .1.
+GPU_PCI="0000:01:00.0"
+GPU_AUDIO_PCI="0000:01:00.1"
+
+# Your login/display manager systemd unit.
+DISPLAY_MANAGER="sddm"
+
+# Extra systemd units that ALSO hold the GPU from OUTSIDE the desktop session and
+# must be stopped before nvidia can unload (space separated). Stopping the display
+# manager alone will not release these. Common culprits:
+#   plexmediaserver          (NVENC/NVDEC on /dev/nvidia-uvm)
+#   ollama / any CUDA daemon
+# chrome-remote-desktop@USER is auto-detected, no need to list it.
+# Leave empty if none.
+EXTRA_GPU_HOLDERS=""
+
+# OPTIONAL: hand an entire USB controller to the guest (only if your host has a
+# controller you are happy to lose while the VM runs; recovery is then SSH/ACPI,
+# not USB). Leave BOTH empty to skip USB-controller passthrough entirely.
+# USB_CTRL_PCI      = the xHCI controller
+# USB_CTRL_MATE_PCI = its IOMMU group-mate, if the group has one (else leave empty)
+USB_CTRL_PCI=""
+USB_CTRL_MATE_PCI=""

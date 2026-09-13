@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# libvirt QEMU hook. Fires the single-GPU passthrough bind/release for any domain
+# whose NAME ends in "-gpu" (e.g. win11-gpu, endeavouros-gpu). Name your passthrough
+# domain accordingly, or edit the case pattern below.
+GUEST="$1"; OP="$2"; SUBOP="$3"
+
+case "$GUEST" in
+  *-gpu) ;;
+  *) exit 0 ;;
+esac
+
+if [ "$OP" = "prepare" ] && [ "$SUBOP" = "begin" ]; then
+  /usr/local/bin/vfio-gpu-bind.sh
+  /usr/local/bin/vfio-usb-bind.sh
+elif [ "$OP" = "release" ] && [ "$SUBOP" = "end" ]; then
+  /usr/local/bin/vfio-usb-release.sh
+  /usr/local/bin/vfio-gpu-release.sh
+fi

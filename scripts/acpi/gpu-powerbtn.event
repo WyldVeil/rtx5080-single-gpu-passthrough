@@ -1,0 +1,3 @@
+# Install to /etc/acpi/events/gpu-powerbtn  (then: systemctl restart acpid)
+event=button/power
+action=/etc/acpi/gpu-power-action.sh

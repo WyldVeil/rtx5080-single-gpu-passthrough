@@ -1,0 +1,76 @@
+<!--
+  Template libvirt domain for single-GPU passthrough (q35 + OVMF/UEFI).
+  This is a REFERENCE for the passthrough-critical bits, not a drop-in file. Easiest
+  path: build a normal UEFI VM in virt-manager first, get it installed, then
+  `virsh edit <name>` and merge the marked pieces below.
+
+  MUST EDIT: name (must end in -gpu), uuid, RAM, vcpu, disk source, the CDROM ISO
+  path, and EVERY PCI address in <hostdev> to match YOUR card (lspci -Dnn).
+
+  THE ONE THAT FIXES THE BLACK GUEST SCREEN on RTX 50 / Blackwell:
+      <rom bar='off'/>   inside the GPU hostdev (see below). NOT a <rom file=...>.
+-->
+<domain type='kvm'>
+  <name>endeavouros-gpu</name>                          <!-- name MUST end in -gpu -->
+  <uuid>REPLACE-WITH-uuidgen</uuid>
+  <memory unit='KiB'>16777216</memory>                  <!-- 16 GiB, adjust -->
+  <currentMemory unit='KiB'>16777216</currentMemory>
+  <vcpu placement='static'>8</vcpu>
+  <os firmware='efi'>
+    <type arch='x86_64' machine='q35'>hvm</type>
+    <!-- Secure Boot OFF is simplest for NVIDIA on a Linux guest.
+         libvirt fills in loader/nvram from the 'efi' firmware feature. -->
+    <boot dev='cdrom'/>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/>
+    <apic/>
+  </features>
+  <!-- host-passthrough gives the guest the real CPU; best for gaming/perf -->
+  <cpu mode='host-passthrough' check='none' migratable='off'/>
+  <clock offset='utc'/>
+  <devices>
+    <!-- your OS disk (virtio recommended) -->
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none' io='threads' discard='unmap'/>
+      <source file='/var/lib/libvirt/images/REPLACE.qcow2'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <!-- install/live ISO. For EndeavourOS use the ISO from patch-eos-iso.sh -->
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/path/to/EndeavourOS_gpu.iso'/>
+      <target dev='sda' bus='sata'/>
+      <readonly/>
+    </disk>
+
+    <!-- ================= GPU PASSTHROUGH (the important part) ================= -->
+    <!-- GPU (VGA/3D) function. THE FIX: <rom bar='off'/>  -->
+    <hostdev mode='subsystem' type='pci' managed='no'>
+      <source>
+        <address domain='0x0000' bus='0x01' slot='0x00' function='0x0'/>   <!-- EDIT to your GPU -->
+      </source>
+      <rom bar='off'/>
+    </hostdev>
+    <!-- GPU HDMI/DP audio function (same card, .1) -->
+    <hostdev mode='subsystem' type='pci' managed='no'>
+      <source>
+        <address domain='0x0000' bus='0x01' slot='0x00' function='0x1'/>   <!-- EDIT to your GPU audio -->
+      </source>
+    </hostdev>
+    <!-- ======================================================================= -->
+
+    <!-- OPTIONAL: pass a whole USB controller (see passthrough.conf USB_CTRL_PCI).
+    <hostdev mode='subsystem' type='pci' managed='no'>
+      <source><address domain='0x0000' bus='0x00' slot='0x14' function='0x0'/></source>
+    </hostdev>
+    -->
+
+    <!-- with the GPU driving a real monitor you usually want NO emulated video;
+         if the VM refuses to start without one, add a <video><model type='none'/></video> -->
+  </devices>
+  <!-- 'managed=no' is used above because the bind/release scripts handle vfio
+       attach/detach via the libvirt hook. If you prefer libvirt to manage it,
+       set managed='yes' and skip vfio-gpu-bind.sh's nodedev-detach. -->
+</domain>
