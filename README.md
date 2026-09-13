@@ -21,8 +21,20 @@ It solves two problems that the usual guides do not:
 - Guest: EndeavourOS live/installed, and Windows
 - The GPU is the primary/boot VGA (`boot_vga=1`)
 
-The scripts are config-driven, so they should work for any single NVIDIA GPU; the
-`rombar off` and self-heal findings apply broadly to RTX 50 / Blackwell.
+## Should also work on
+
+This was tested on an RTX 5080, but nothing here is 5080-specific. Everything is
+config-driven (you set your own PCI address), so in theory it should work on:
+
+- **Any RTX 50-series card** - the whole Blackwell lineup (5090, 5080, 5070 Ti,
+  5070, 5060 and so on). They share the display-init and reset behaviour we hit, so
+  `rombar off` and the connector-revive handback should apply directly.
+- **Other NVIDIA cards with the same symptoms.** If you get a black guest screen on
+  single-GPU passthrough, or a black host screen after the VM shuts down that only a
+  power drain clears, the two fixes here are worth trying whatever the generation.
+
+If it works (or does not) on your card, open an issue and say which one, so this list
+can grow.
 
 ## How it works
 
