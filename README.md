@@ -1,4 +1,4 @@
-# RTX 5080 (Blackwell) single-GPU passthrough on Linux
+# RTX 50 series (Blackwell) single-GPU passthrough on Linux
 
 Everything needed to pass an RTX 50-series GPU to a VM on a machine that has only
 that one GPU, and to get back to your desktop cleanly afterwards. This is the
