@@ -14,6 +14,16 @@ It solves two problems that the usual guides do not:
    link*, not a fatal reset bug, and it can be revived purely in software. The
    handback self-heals automatically. See [The black host screen after shutdown](#the-black-host-screen-after-shutdown).
 
+> **It even works on the EndeavourOS live ISO, not just an installed system.** With
+> the ISO patcher and `rombar off` in place, you can boot the live EndeavourOS
+> environment as a single-GPU passthrough guest and have the real card drive your
+> monitor, before installing anything at all. Getting a live distro to run under
+> single-GPU passthrough with working NVIDIA output has never been easy, and people
+> have struggled with it for years. Here it is boot-and-go: point the VM at the
+> patched ISO, launch it, and the live desktop comes up on the passed-through GPU.
+> That makes it perfect for trying, testing, or troubleshooting with a full GPU
+> before you commit to an install.
+
 ## Tested on
 
 - RTX 5080 (GB203, `10de:2c02`), single GPU, monitor on DisplayPort
