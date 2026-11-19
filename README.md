@@ -1,5 +1,7 @@
 # RTX 50 series (Blackwell) single-GPU passthrough on Linux
 
+[![Found it useful? Buy me a coffee](https://img.shields.io/badge/Found_it_useful%3F-Buy_me_a_coffee-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/wyldveil)
+
 Everything needed to pass an RTX 50-series GPU to a VM on a machine that has only
 that one GPU, and to get back to your desktop cleanly afterwards. This is the
 result of a long, stubborn debugging session, so it documents the dead ends too.
