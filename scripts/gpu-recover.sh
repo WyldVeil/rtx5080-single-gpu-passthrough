@@ -18,20 +18,66 @@ logger -t gpu-recover "started - reclaiming GPU to host"
 
 STOPPED=/run/gpu-stopped-units
 ABORTED=/run/gpu-bind-aborted
+SESSION_USERS_FILE=/run/gpu-session-users
 
+# True if $1 is a regular user (uid >= 1000) whose systemd user manager is already
+# running. Asked of the system manager on purpose: 'systemctl --user -M USER@' opens
+# a PAM session for that user and would start their manager just to answer.
+user_manager_up() {
+  local uid
+  uid=$(id -u "$1" 2>/dev/null) || return 1
+  [ "$uid" -ge 1000 ] && systemctl is-active --quiet "user@$uid.service"
+}
+
+# Desktop users the bind hook recorded. If there is no such record, anyone whose
+# running user manager still has a graphical session or Plasma's compositor up.
+session_users() {
+  local u
+  if [ -n "$(tr -d '[:space:]' < "$SESSION_USERS_FILE" 2>/dev/null)" ]; then cat "$SESSION_USERS_FILE"; return; fi
+  for u in $(loginctl list-users --no-legend 2>/dev/null | awk '{print $2}'); do
+    user_manager_up "$u" || continue
+    { timeout 10 systemctl --user -M "$u@" is-active --quiet graphical-session.target ||
+      timeout 10 systemctl --user -M "$u@" is-active --quiet plasma-kwin_wayland.service; } 2>/dev/null && echo "$u"
+  done
+}
+
+# A compositor left over from the session before the launch makes systemd skip
+# starting a new one at the next login: black screen. Clear it before the display
+# manager comes back. Only while the DM is down, so this can never end a session you
+# have already logged back into.
+stop_stale_graphical_sessions() {
+  systemctl is-active --quiet "$DISPLAY_MANAGER" && return 0
+  local u
+  for u in $(session_users); do
+    user_manager_up "$u" || continue
+    echo "-- clearing any leftover graphical session of $u"
+    timeout 30 systemctl --user -M "$u@" stop graphical-session.target \
+      || echo "!! could not stop graphical-session.target for $u"
+    timeout 30 systemctl --user -M "$u@" stop plasma-kwin_wayland.service 2>/dev/null
+  done
+  # -f: procps only matches the first 15 characters of a process name
+  pkill -KILL -f '^([^ ]*/)?kwin_wayland_wrapper( |$)' 2>/dev/null && echo "-- killed leftover kwin_wayland_wrapper"
+  pkill -KILL -x kwin_wayland 2>/dev/null && echo "-- killed leftover kwin_wayland"
+  return 0
+}
+
+# Bring back everything vfio-gpu-bind.sh stopped. In a recovery the display manager
+# may be up but broken, and a leftover compositor would black-screen the next login,
+# so: take the DM down, clear the old session, restore the other units, DM last.
 restore_gpu_units() {
+  systemctl stop "$DISPLAY_MANAGER"
+  stop_stale_graphical_sessions
   if [ -s "$STOPPED" ]; then
     tac "$STOPPED" | while read -r u; do
       [ -n "$u" ] || continue
       case "$u" in
-        "$DISPLAY_MANAGER"|"$DISPLAY_MANAGER".service) systemctl restart "$u" ;;
-        *)                                             systemctl start "$u" ;;
+        "$DISPLAY_MANAGER"|"$DISPLAY_MANAGER".service) ;;   # started last, below
+        *) systemctl start "$u" ;;
       esac
     done
     rm -f "$STOPPED"
-  else
-    systemctl restart "$DISPLAY_MANAGER"
   fi
+  systemctl start "$DISPLAY_MANAGER"
   rm -f "$ABORTED"
 }
 

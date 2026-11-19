@@ -14,10 +14,29 @@ DISPLAY_MANAGER="sddm"
 # must be stopped before nvidia can unload (space separated). Stopping the display
 # manager alone will not release these. Common culprits:
 #   plexmediaserver          (NVENC/NVDEC on /dev/nvidia-uvm)
+#   lactd                    (LACT GPU control daemon: holds the card through NVML
+#                             and restarts itself if killed, so it must be stopped)
 #   ollama / any CUDA daemon
 # chrome-remote-desktop@USER is auto-detected, no need to list it.
 # Leave empty if none.
 EXTRA_GPU_HOLDERS=""
+
+# Seconds each GPU-holding service (the ones above, nvidia-persistenced and Chrome
+# Remote Desktop) gets to stop before it is SIGKILLed. Plex, for one, can otherwise
+# sit in "deactivating" for its full 90 s default while the launch waits.
+HOLDER_STOP_TIMEOUT=8
+
+# OPTIONAL: before the handover, delete everything of the desktop user's at the top
+# of /tmp that nothing still needs, the way a reboot would. Only does anything when
+# /tmp is a tmpfs (Arch, Fedora and others), where those files live in RAM. VFIO pins
+# ALL of the guest's RAM, so with the VM sized close to the host's RAM, a few GB of
+# old temp files can get QEMU OOM-killed seconds after it starts.
+# Kept: hidden entries, mount points, folders holding sockets or fifos (tmux,
+# ssh-agent), other users' and services' files, anything a running process has open,
+# mapped or is working in (containers too), anything a mount or loop device uses, and
+# anything the VM's own XML points at. Every deletion is logged in vfio-gpu.log.
+# Off by default because it deletes files. 1 = on.
+CLEAR_USER_TMP=0
 
 # OPTIONAL: hand an entire USB controller to the guest (only if your host has a
 # controller you are happy to lose while the VM runs; recovery is then SSH/ACPI,

@@ -10,7 +10,12 @@ case "$GUEST" in
 esac
 
 if [ "$OP" = "prepare" ] && [ "$SUBOP" = "begin" ]; then
-  /usr/local/bin/vfio-gpu-bind.sh
+  # libvirt passes the domain XML on stdin. Keep it, so the bind knows which files
+  # this VM is about to open (CLEAR_USER_TMP must not delete them).
+  if [ -t 0 ]; then : > /run/gpu-domain.xml; else ( umask 077; timeout 10 cat > /run/gpu-domain.xml ); fi
+  # A bind that aborted has already restored the desktop: fail the start, so libvirt
+  # stops here and the USB controller is never handed over.
+  /usr/local/bin/vfio-gpu-bind.sh "$GUEST" || { echo "GPU bind aborted, see /var/log/vfio-gpu.log" >&2; exit 1; }
   /usr/local/bin/vfio-usb-bind.sh
 elif [ "$OP" = "release" ] && [ "$SUBOP" = "end" ]; then
   /usr/local/bin/vfio-usb-release.sh
